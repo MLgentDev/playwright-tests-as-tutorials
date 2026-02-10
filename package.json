@@ -1,0 +1,23 @@
+{
+  "name": "playwright-tests-as-tutorials",
+  "version": "1.0.0",
+  "description": "Turn existing Playwright tests into interactive, in-app user tutorials using Driver.js.",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MLgentDev/playwright-tests-as-tutorials.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MLgentDev/playwright-tests-as-tutorials/issues"
+  },
+  "homepage": "https://github.com/MLgentDev/playwright-tests-as-tutorials#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.2.3"
+  }
+}
