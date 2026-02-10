@@ -6,6 +6,19 @@ const DRIVER_JS_URL = `https://cdn.jsdelivr.net/npm/driver.js@${DRIVER_JS_VERSIO
 
 const DEFAULT_HIGHLIGHT_TIMEOUT = 3000;
 
+export interface HighlightOptions {
+  /** Popover heading (supports HTML) */
+  title?: string;
+  /** Popover body text (supports HTML) */
+  text?: string;
+  /** How long (ms) to keep the highlight visible. Default: 3000 */
+  timeout?: number;
+  /** Popover placement side */
+  side?: 'top' | 'right' | 'bottom' | 'left';
+  /** Popover alignment within the side */
+  align?: 'start' | 'center' | 'end';
+}
+
 export class Tutorial {
   private _page: Page;
   private _injected = false;
@@ -38,9 +51,9 @@ export class Tutorial {
    * Highlight an element on the page using Driver.js overlay.
    *
    * @param target  - CSS selector or Playwright Locator of the element to highlight
-   * @param timeout - How long (ms) to keep the highlight visible. Default: 3000
+   * @param options - Optional popover content and display settings
    */
-  async highlight(target: string | Locator, timeout: number = DEFAULT_HIGHLIGHT_TIMEOUT): Promise<void> {
+  async highlight(target: string | Locator, options?: HighlightOptions): Promise<void> {
     let handle: ElementHandle | null;
     if (typeof target === 'string') {
       handle = await this._page.waitForSelector(target, { state: 'visible' });
@@ -49,28 +62,46 @@ export class Tutorial {
       handle = await target.elementHandle();
     }
     if (!handle) throw new Error('Could not resolve element to highlight');
-    await this._highlightElement(handle, timeout);
+    await this._highlightElement(handle, options ?? {});
   }
 
   /** Shared implementation: inject Driver.js, highlight the element, wait, then destroy. */
-  private async _highlightElement(handle: ElementHandle, timeout: number): Promise<void> {
+  private async _highlightElement(handle: ElementHandle, options: HighlightOptions): Promise<void> {
     await this._ensureDriverJs();
 
-    await handle.evaluate((el) => {
+    const hasPopover = !!(options.title || options.text);
+    const popoverData = hasPopover
+      ? { title: options.title, text: options.text, side: options.side, align: options.align }
+      : null;
+
+    await handle.evaluate((el, opts) => {
       const driverFn = (window as any).driver.js.driver;
-      const driverObj = driverFn({
+      const driverConfig: Record<string, any> = {
         animate: true,
         overlayOpacity: 0.5,
         stagePadding: 8,
         stageRadius: 5,
         allowClose: false,
-        popoverClass: 'tutorial-no-popover',
-      });
-      driverObj.highlight({ element: el as Element });
-      (window as any).__tutorialDriver = driverObj;
-    });
+      };
+      if (!opts) {
+        driverConfig.popoverClass = 'tutorial-no-popover';
+      }
+      const driverObj = driverFn(driverConfig);
 
-    await this._page.waitForTimeout(timeout);
+      const step: Record<string, any> = { element: el as Element };
+      if (opts) {
+        step.popover = {
+          title: opts.title,
+          description: opts.text,
+          side: opts.side,
+          align: opts.align,
+        };
+      }
+      driverObj.highlight(step);
+      (window as any).__tutorialDriver = driverObj;
+    }, popoverData);
+
+    await this._page.waitForTimeout(options.timeout ?? DEFAULT_HIGHLIGHT_TIMEOUT);
 
     await this._page.evaluate(() => {
       const driverObj = (window as any).__tutorialDriver;

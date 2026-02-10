@@ -6,7 +6,7 @@ This project turns Playwright tests into visual, step-by-step user tutorials by 
 
 ## Architecture
 
-- **`lib/tutorial.ts`** — Core `Tutorial` class. Wraps a Playwright `Page`, lazily injects Driver.js (v1.4.0) from CDN, exposes `highlight(target, timeout?)` where `target` is a CSS selector string or Playwright `Locator`. Injection state auto-resets on `framenavigated`.
+- **`lib/tutorial.ts`** — Core `Tutorial` class. Wraps a Playwright `Page`, lazily injects Driver.js (v1.4.0) from CDN, exposes `highlight(target, options?)` where `target` is a CSS selector string or Playwright `Locator` and `options` is an optional `HighlightOptions` object with `title`, `text`, `timeout`, `side`, and `align`. Injection state auto-resets on `framenavigated`.
 - **`tests/*.spec.ts`** — Playwright test files that import `Tutorial` and call `highlight()` between standard test steps.
 - **`playwright.config.ts`** — Sets `slowMo: 500` for demo pacing, viewport `1600×900` per project, `fullyParallel: true`.
 
@@ -34,8 +34,15 @@ Always use `--headed` — headless runs won't show the tutorial overlays.
 
 1. Create a test file in `tests/` using Playwright's `test`/`expect` from `@playwright/test`.
 2. Import `Tutorial` from `../lib/tutorial` and instantiate with `new Tutorial(page)`.
-3. Interleave `await tutorial.highlight(target)` calls between test actions to spotlight elements.
-4. `highlight()` accepts a CSS selector string or a Playwright `Locator`. Default duration is 3000ms; pass a second arg to customize.
+3. Interleave `await tutorial.highlight(target, options?)` calls between test actions to spotlight elements.
+4. `highlight()` accepts a CSS selector string or a Playwright `Locator`. Pass an optional `HighlightOptions` object to control popover content, duration, and positioning.
+
+`HighlightOptions` fields (all optional):
+- `title` — popover heading (supports HTML)
+- `text` — popover body (supports HTML)
+- `timeout` — ms to display (default 3000)
+- `side` — `'top' | 'right' | 'bottom' | 'left'`
+- `align` — `'start' | 'center' | 'end'`
 
 Example pattern (from `tests/example.spec.ts`):
 ```typescript
@@ -45,17 +52,21 @@ import { Tutorial } from '../lib/tutorial';
 test('my tutorial', async ({ page }) => {
   await page.goto('https://example.com');
   const tutorial = new Tutorial(page);
-  await tutorial.highlight('.target-element');      // CSS selector, 3s default
-  await tutorial.highlight('#cta-button', 5000);   // CSS selector, 5s custom
+  await tutorial.highlight('.target-element');                                                // overlay only, 3s
+  await tutorial.highlight('#cta-button', { title: 'Click here', text: 'Start the flow' });  // with popover
+  await tutorial.highlight('#cta-button', { timeout: 5000 });                                // overlay only, 5s
+  await tutorial.highlight('.hero', { title: 'Hero', side: 'bottom', align: 'center' });     // positioned popover
   await page.getByRole('link', { name: 'Next' }).click();
-  await tutorial.highlight(page.getByRole('heading', { name: 'Result' })); // Locator
+  await tutorial.highlight(page.getByRole('heading', { name: 'Result' }), {
+    text: 'This is the result heading',
+  }); // Locator with popover
 });
 ```
 
 ## Conventions
 
 - **One `Tutorial` instance per test** — create it right after `page.goto()`.
-- **No popover text** — highlights use overlay-only mode (`popoverClass: 'tutorial-no-popover'`). If adding popover support, extend the `highlight()` API in `lib/tutorial.ts`.
+- **Popover is optional** — omit `title`/`text` for overlay-only highlights; provide them to show a Driver.js popover.
 - **Driver.js is CDN-loaded**, not an npm dependency. Version is pinned via constants at the top of `lib/tutorial.ts`.
 - **No npm scripts defined** — run Playwright directly via `npx playwright test`.
 - **Module system**: `commonjs` (see `package.json` `"type"`).
