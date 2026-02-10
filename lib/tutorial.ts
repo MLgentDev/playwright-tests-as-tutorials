@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Page, Locator } from '@playwright/test';
 
 const DRIVER_JS_VERSION = '1.4.0';
 const DRIVER_CSS_URL = `https://cdn.jsdelivr.net/npm/driver.js@${DRIVER_JS_VERSION}/dist/driver.css`;
@@ -66,6 +66,34 @@ export class Tutorial {
     await this._page.waitForTimeout(timeout);
 
     // Destroy the highlight
+    await this._page.evaluate(() => {
+      const driverObj = (window as any).__tutorialDriver;
+      if (driverObj) {
+        driverObj.destroy();
+        delete (window as any).__tutorialDriver;
+      }
+    });
+  }
+
+  async highlightLocator(locator: Locator, timeout: number = DEFAULT_HIGHLIGHT_TIMEOUT): Promise<void> {
+    await this._ensureDriverJs();
+    await locator.waitFor({ state: 'visible' });
+    const handle = await locator.elementHandle();
+    if (!handle) throw new Error('Could not resolve locator to an element handle');
+    await handle.evaluate((el) => {
+      const driverFn = (window as any).driver.js.driver;
+      const driverObj = driverFn({
+        animate: true,
+        overlayOpacity: 0.5,
+        stagePadding: 8,
+        stageRadius: 5,
+        allowClose: false,
+        popoverClass: 'tutorial-no-popover',
+      });
+      driverObj.highlight({ element: el as Element });
+      (window as any).__tutorialDriver = driverObj;
+    });
+    await this._page.waitForTimeout(timeout);
     await this._page.evaluate(() => {
       const driverObj = (window as any).__tutorialDriver;
       if (driverObj) {

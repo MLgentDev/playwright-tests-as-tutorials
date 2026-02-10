@@ -28,3 +28,25 @@ test('get started link', async ({ page }) => {
   // Highlight the Installation heading
   await tutorial.highlight('header h1');
 });
+
+test('get started link with playwright selectors', async ({ page }) => {
+  await page.goto('https://playwright.dev/');
+  const tutorial = new Tutorial(page);
+
+  // Highlight the hero heading using a Playwright locator
+  await tutorial.highlightLocator(page.getByRole('heading', { name: /Playwright/ }));
+
+  // Highlight the "Get started" link using a Playwright locator
+  const getStartedLink = page.getByRole('link', { name: 'Get started' });
+  await tutorial.highlightLocator(getStartedLink);
+
+  // Click the get started link
+  await getStartedLink.click();
+
+  // Expects page to have a heading with the name of Installation
+  const installHeading = page.getByRole('heading', { name: 'Installation' });
+  await expect(installHeading).toBeVisible();
+
+  // Highlight the Installation heading using a Playwright locator
+  await tutorial.highlightLocator(installHeading);
+});
