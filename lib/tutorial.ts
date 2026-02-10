@@ -37,19 +37,18 @@ export class Tutorial {
   /**
    * Highlight an element on the page using Driver.js overlay.
    *
-   * @param selector - CSS selector of the element to highlight
-   * @param timeout  - How long (ms) to keep the highlight visible. Default: 3000
+   * @param target  - CSS selector or Playwright Locator of the element to highlight
+   * @param timeout - How long (ms) to keep the highlight visible. Default: 3000
    */
-  async highlight(selector: string, timeout: number = DEFAULT_HIGHLIGHT_TIMEOUT): Promise<void> {
-    const handle = await this._page.waitForSelector(selector, { state: 'visible' });
-    if (!handle) throw new Error(`Could not find visible element for selector: ${selector}`);
-    await this._highlightElement(handle, timeout);
-  }
-
-  async highlightLocator(locator: Locator, timeout: number = DEFAULT_HIGHLIGHT_TIMEOUT): Promise<void> {
-    await locator.waitFor({ state: 'visible' });
-    const handle = await locator.elementHandle();
-    if (!handle) throw new Error('Could not resolve locator to an element handle');
+  async highlight(target: string | Locator, timeout: number = DEFAULT_HIGHLIGHT_TIMEOUT): Promise<void> {
+    let handle: ElementHandle | null;
+    if (typeof target === 'string') {
+      handle = await this._page.waitForSelector(target, { state: 'visible' });
+    } else {
+      await target.waitFor({ state: 'visible' });
+      handle = await target.elementHandle();
+    }
+    if (!handle) throw new Error('Could not resolve element to highlight');
     await this._highlightElement(handle, timeout);
   }
 

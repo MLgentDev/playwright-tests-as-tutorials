@@ -34,11 +34,11 @@ test('get started link with playwright selectors', async ({ page }) => {
   const tutorial = new Tutorial(page);
 
   // Highlight the hero heading using a Playwright locator
-  await tutorial.highlightLocator(page.getByRole('heading', { name: /Playwright/ }));
+  await tutorial.highlight(page.getByRole('heading', { name: /Playwright/ }));
 
   // Highlight the "Get started" link using a Playwright locator
   const getStartedLink = page.getByRole('link', { name: 'Get started' });
-  await tutorial.highlightLocator(getStartedLink);
+  await tutorial.highlight(getStartedLink);
 
   // Click the get started link
   await getStartedLink.click();
@@ -48,5 +48,5 @@ test('get started link with playwright selectors', async ({ page }) => {
   await expect(installHeading).toBeVisible();
 
   // Highlight the Installation heading using a Playwright locator
-  await tutorial.highlightLocator(installHeading);
+  await tutorial.highlight(installHeading);
 });

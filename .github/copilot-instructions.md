@@ -6,7 +6,7 @@ This project turns Playwright tests into visual, step-by-step user tutorials by 
 
 ## Architecture
 
-- **`lib/tutorial.ts`** — Core `Tutorial` class. Wraps a Playwright `Page`, lazily injects Driver.js (v1.4.0) from CDN, exposes `highlight(selector, timeout?)`. Injection state auto-resets on `framenavigated`.
+- **`lib/tutorial.ts`** — Core `Tutorial` class. Wraps a Playwright `Page`, lazily injects Driver.js (v1.4.0) from CDN, exposes `highlight(target, timeout?)` where `target` is a CSS selector string or Playwright `Locator`. Injection state auto-resets on `framenavigated`.
 - **`tests/*.spec.ts`** — Playwright test files that import `Tutorial` and call `highlight()` between standard test steps.
 - **`playwright.config.ts`** — Sets `slowMo: 500` for demo pacing, viewport `1600×900` per project, `fullyParallel: true`.
 
@@ -34,8 +34,8 @@ Always use `--headed` — headless runs won't show the tutorial overlays.
 
 1. Create a test file in `tests/` using Playwright's `test`/`expect` from `@playwright/test`.
 2. Import `Tutorial` from `../lib/tutorial` and instantiate with `new Tutorial(page)`.
-3. Interleave `await tutorial.highlight(selector)` calls between test actions to spotlight elements.
-4. Use CSS selectors for `highlight()`. Default duration is 3000ms; pass a second arg to customize.
+3. Interleave `await tutorial.highlight(target)` calls between test actions to spotlight elements.
+4. `highlight()` accepts a CSS selector string or a Playwright `Locator`. Default duration is 3000ms; pass a second arg to customize.
 
 Example pattern (from `tests/example.spec.ts`):
 ```typescript
@@ -45,10 +45,10 @@ import { Tutorial } from '../lib/tutorial';
 test('my tutorial', async ({ page }) => {
   await page.goto('https://example.com');
   const tutorial = new Tutorial(page);
-  await tutorial.highlight('.target-element');      // 3s default
-  await tutorial.highlight('#cta-button', 5000);   // 5s custom
+  await tutorial.highlight('.target-element');      // CSS selector, 3s default
+  await tutorial.highlight('#cta-button', 5000);   // CSS selector, 5s custom
   await page.getByRole('link', { name: 'Next' }).click();
-  await tutorial.highlight('header h1');
+  await tutorial.highlight(page.getByRole('heading', { name: 'Result' })); // Locator
 });
 ```
 
