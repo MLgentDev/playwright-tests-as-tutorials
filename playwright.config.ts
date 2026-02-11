@@ -32,6 +32,11 @@ export default defineConfig<TestOptions>({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
 
+    /* Record video when TUTORIAL mode is enabled (full viewport resolution) */
+    video: process.env.TUTORIAL
+      ? { mode: 'on', size: { width: 1600, height: 900 } }
+      : 'off',
+
     /* Slow down actions for tutorial demo visibility */
     launchOptions: { slowMo: process.env.TUTORIAL ? 500 : 0 },
   },

@@ -33,7 +33,9 @@ npx playwright test tests/todomvc.spec.ts --headed --project=chromium
 TUTORIAL=1 npx playwright test tests/todomvc.spec.ts --headed --project=chromium
 ```
 
-With `TUTORIAL=1`, the browser shows Driver.js highlights between test steps and actions are slowed with `slowMo: 500`. Without it, highlights are no-ops and tests run at full speed.
+When `TUTORIAL=1` is set, video recording is automatically enabled via `playwright.config.ts`. Videos are saved in the `test-results/` directory alongside each test's artifacts and are also available in the HTML report (`npx playwright show-report`).
+
+With `TUTORIAL=1`, the browser shows Driver.js highlights between test steps and actions are slowed with `slowMo: 500`. Without it, highlights are no-ops, video is off, and tests run at full speed.
 
 ## Usage
 
