@@ -8,55 +8,92 @@ Playwright tests already navigate your app and interact with real UI elements �
 
 ## How It Works
 
-1. A `Tutorial` utility class wraps a Playwright `Page`
-2. On first use, it lazily injects Driver.js (CSS + JS) from CDN into the page
-3. Calling `tutorial.highlight(selector)` overlays a spotlight on the target element for a configurable duration (default: 3s), then auto-dismisses
-4. Injection state resets automatically on page navigations
+1. A `Tutorial` utility class wraps a Playwright `Page` and accepts an `active` flag (default `false`)
+2. When `active` is `false`, all `highlight()` calls are silent no-ops — zero overhead for normal test runs
+3. When `active` is `true`, it lazily injects Driver.js (CSS + JS) from CDN into the page on first use
+4. Calling `tutorial.highlight(target, options?)` overlays a spotlight on the target element with an optional popover, holds for a configurable duration (default: 3s), then auto-dismisses
+5. Injection state resets automatically on page navigations
 
 ## Quick Start
 
 ```bash
 npm install
 npx playwright install
-npx playwright test --headed --project=chromium
+
+# Run tests normally (no highlights, fast)
+npx playwright test --project=chromium
+
+# Run with tutorial overlays enabled
+TUTORIAL=1 npx playwright test --headed --project=chromium
+
+# Run a specific test file
+npx playwright test tests/todomvc.spec.ts --headed --project=chromium
+
+# Run a specific test file with tutorial overlays enabled
+TUTORIAL=1 npx playwright test tests/todomvc.spec.ts --headed --project=chromium
 ```
 
-Watch the browser — you'll see Driver.js highlights appear between test steps.
+With `TUTORIAL=1`, the browser shows Driver.js highlights between test steps and actions are slowed with `slowMo: 500`. Without it, highlights are no-ops and tests run at full speed.
 
 ## Usage
 
+Import `test` and `expect` from `../lib/fixtures` (not `@playwright/test`) to get the `tutorial` fixture option.
+
+### Env-var-driven tutorial (highlights only when `TUTORIAL=1`)
+
 ```typescript
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../lib/fixtures';
 import { Tutorial } from '../lib/tutorial';
 
-test('example tutorial', async ({ page }) => {
+test('example tutorial', async ({ page, tutorial: tutorialActive }) => {
   await page.goto('https://example.com');
-  const tutorial = new Tutorial(page);
+  const tutorial = new Tutorial(page, tutorialActive);
 
-  // Highlight an element for 3 seconds (default)
-  await tutorial.highlight('.hero-title');
+  await tutorial.highlight('.hero-title');                                     // overlay only, 3s
+  await tutorial.highlight('#signup-button', { title: 'Sign Up', text: 'Click here to register.' });
+  await tutorial.highlight('.hero', { timeout: 5000, side: 'bottom' });       // positioned, 5s
+  await tutorial.highlight(page.getByRole('heading', { name: 'Welcome' }), {
+    text: 'Locator-based highlight',
+  });
+});
+```
 
-  // Highlight with custom timeout
-  await tutorial.highlight('#signup-button', 5000);
+### Always-on tutorial (highlights every run)
+
+```typescript
+import { test, expect } from '../lib/fixtures';
+import { Tutorial } from '../lib/tutorial';
+
+test('always-on demo', async ({ page }) => {
+  await page.goto('https://example.com');
+  const tutorial = new Tutorial(page, true); // always active
+  await tutorial.highlight('.hero', { title: 'Hero', text: 'Always highlighted.' });
 });
 ```
 
 ## API
 
-### `new Tutorial(page: Page)`
+### `new Tutorial(page: Page, active?: boolean)`
 
-Creates a tutorial instance bound to a Playwright `Page`. Automatically re-injects Driver.js after navigations.
+Creates a tutorial instance bound to a Playwright `Page`. When `active` is `false` (default), all `highlight()` calls are silent no-ops. Automatically re-injects Driver.js after navigations.
 
-### `tutorial.highlight(selector: string, timeout?: number): Promise<void>`
+### `tutorial.highlight(target: string | Locator, options?: HighlightOptions): Promise<void>`
 
-- **selector** — CSS selector of the element to highlight
-- **timeout** — Duration in ms to hold the highlight (default: `3000`)
+- **target** — CSS selector string or Playwright `Locator` of the element to highlight
+- **options** — Optional object:
+  - `title` — popover heading (supports HTML)
+  - `text` — popover body (supports HTML)
+  - `timeout` — ms to display (default: `3000`)
+  - `side` — `'top' | 'right' | 'bottom' | 'left'`
+  - `align` — `'start' | 'center' | 'end'`
 
-Shows a Driver.js overlay cutout around the element, waits for the timeout, then dismisses.
+When `active` is `false`, returns immediately. When `active` is `true`, shows a Driver.js overlay around the element, optionally with a popover, waits for the timeout, then dismisses.
 
 ## Configuration
 
-The viewport is set to **1600×900** per project in `playwright.config.ts`. Actions are slowed down with `slowMo: 500` for better visual pacing during demos.
+The viewport is set to **1600×900** per project in `playwright.config.ts`. When `TUTORIAL=1` is set, actions are slowed with `slowMo: 500` for visual pacing; otherwise `slowMo` is `0`.
+
+The config imports `TestOptions` from `lib/fixtures` and uses `defineConfig<TestOptions>()` to enable the `tutorial` fixture option.
 
 Driver.js is loaded from CDN (pinned to v1.4.0):
 - JS: `https://cdn.jsdelivr.net/npm/driver.js@1.4.0/dist/driver.js.iife.js`
@@ -66,10 +103,12 @@ Driver.js is loaded from CDN (pinned to v1.4.0):
 
 ```
 lib/
-  tutorial.ts        # Tutorial utility class (Driver.js injection + highlight)
+  tutorial.ts        # Tutorial class (Driver.js injection + highlight, idle by default)
+  fixtures.ts        # Custom Playwright fixtures (tutorial boolean option)
 tests/
-  example.spec.ts    # Demo test with highlight calls
-playwright.config.ts # Playwright config (viewport, slowMo)
+  example.spec.ts    # Always-on demo tutorials (Playwright docs site)
+  todomvc.spec.ts    # Env-var-driven tutorial (TodoMVC app)
+playwright.config.ts # Playwright config (viewport, conditional slowMo)
 ```
 
 ## License

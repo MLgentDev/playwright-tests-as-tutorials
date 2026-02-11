@@ -22,9 +22,16 @@ export interface HighlightOptions {
 export class Tutorial {
   private _page: Page;
   private _injected = false;
+  private _active: boolean;
 
-  constructor(page: Page) {
+  /**
+   * @param page   - Playwright Page instance
+   * @param active - When `false` (default), all highlight() calls are silent no-ops.
+   *                 Pass `true` to enable Driver.js overlays.
+   */
+  constructor(page: Page, active: boolean = false) {
     this._page = page;
+    this._active = active;
 
     // Reset injection flag on navigation so Driver.js is re-injected on new pages
     this._page.on('framenavigated', (frame) => {
@@ -54,6 +61,8 @@ export class Tutorial {
    * @param options - Optional popover content and display settings
    */
   async highlight(target: string | Locator, options?: HighlightOptions): Promise<void> {
+    if (!this._active) return;
+
     let handle: ElementHandle | null;
     if (typeof target === 'string') {
       handle = await this._page.waitForSelector(target, { state: 'visible' });
