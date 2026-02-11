@@ -113,4 +113,4 @@ playwright.config.ts # Playwright config (viewport, conditional slowMo)
 
 ## License
 
-ISC
+Apache License 2.0
