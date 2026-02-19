@@ -1,15 +1,17 @@
 import { test, expect } from '../lib/fixtures';
-import { Tutorial } from '../lib/tutorial';
 
-test('add and complete a todo', async ({ page, tutorial: tutorialActive }) => {
+test('add and complete a todo', async ({ page, tutorialObj: tutorial }) => {
   await page.goto('https://demo.playwright.dev/todomvc/#/');
-  const tutorial = new Tutorial(page, tutorialActive);
+
+  // Introduce the app with a standalone speech
+  await tutorial.speak('Welcome to the TodoMVC tutorial. Let\'s learn how to manage a todo list.');
 
   // Highlight the input field
   await tutorial.highlight('.new-todo', {
     title: 'New Todo Input',
     text: 'Type your todo item here and press Enter.',
     side: 'bottom',
+    speech: 'This is the input field where you type new todo items.',
   });
 
   // Add a todo
@@ -22,6 +24,7 @@ test('add and complete a todo', async ({ page, tutorial: tutorialActive }) => {
     title: 'Your Todo',
     text: 'The todo item has been added to the list.',
     side: 'right',
+    speech: 'Great! The todo item has been added to the list.',
   });
 
   // Add a second todo
@@ -53,6 +56,7 @@ test('add and complete a todo', async ({ page, tutorial: tutorialActive }) => {
     text: 'Use these buttons to filter by All, Active, or Completed.',
     side: 'top',
     align: 'center',
+    speech: 'These filter buttons let you switch between all, active, and completed todos.',
   });
 
   // Click "Active" filter

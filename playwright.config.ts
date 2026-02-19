@@ -13,6 +13,7 @@ import type { TestOptions } from './lib/fixtures';
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig<TestOptions>({
+  timeout: process.env.TUTORIAL ? 5 * 60_000 : undefined,
   testDir: './tests',
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -38,7 +39,10 @@ export default defineConfig<TestOptions>({
       : 'off',
 
     /* Slow down actions for tutorial demo visibility */
-    launchOptions: { slowMo: process.env.TUTORIAL ? 500 : 0 },
+    launchOptions: {
+      slowMo: process.env.TUTORIAL ? 500 : 0,
+      args: process.env.TUTORIAL && process.env.TTS !== 'edge-tts' ? ['--enable-speech-dispatcher'] : [],
+    },
   },
 
   /* Configure projects for major browsers */

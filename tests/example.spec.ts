@@ -1,9 +1,9 @@
 import { test, expect } from '../lib/fixtures';
-import { Tutorial } from '../lib/tutorial';
 
-test('has title', async ({ page }) => {
+test.use({ tutorial: true });
+
+test('has title', async ({ page, tutorialObj: tutorial }) => {
   await page.goto('https://playwright.dev/');
-  const tutorial = new Tutorial(page, true);
 
   // Expect a title "to contain" a substring.
   await expect(page).toHaveTitle(/Playwright/);
@@ -15,9 +15,8 @@ test('has title', async ({ page }) => {
   });
 });
 
-test('get started link', async ({ page }) => {
+test('get started link', async ({ page, tutorialObj: tutorial }) => {
   await page.goto('https://playwright.dev/');
-  const tutorial = new Tutorial(page, true);
 
   // Highlight the "Get started" link before clicking it
   await tutorial.highlight('a.getStarted_Sjon', {
@@ -39,9 +38,8 @@ test('get started link', async ({ page }) => {
   });
 });
 
-test('get started link with playwright selectors', async ({ page }) => {
+test('get started link with playwright selectors', async ({ page, tutorialObj: tutorial }) => {
   await page.goto('https://playwright.dev/');
-  const tutorial = new Tutorial(page, true);
 
   // Highlight the hero heading using a Playwright locator
   await tutorial.highlight(page.getByRole('heading', { name: /Playwright/ }), {
@@ -72,9 +70,8 @@ test('get started link with playwright selectors', async ({ page }) => {
   });
 });
 
-test('highlight without popover', async ({ page }) => {
+test('highlight without popover', async ({ page, tutorialObj: tutorial }) => {
   await page.goto('https://playwright.dev/');
-  const tutorial = new Tutorial(page, true);
 
   // Overlay-only highlight (no popover) — same as original behavior
   await tutorial.highlight('.hero__title');
